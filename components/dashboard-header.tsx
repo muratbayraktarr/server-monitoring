@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Bell, ChevronDown, LogOut, User } from "lucide-react"
+import { Bell, ChevronDown, LogOut, User, Shield, AlertTriangle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { useAnomalies } from "@/hooks/use-anomalies"
 
 interface DashboardHeaderProps {
   user: {
@@ -24,7 +26,12 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter()
-  const [notifications, setNotifications] = useState(3) // Mock notification count
+  const { anomalies } = useAnomalies()
+  const [notifications, setNotifications] = useState(anomalies.length)
+
+  useEffect(() => {
+    setNotifications(anomalies.length)
+  }, [anomalies])
 
   const handleLogout = () => {
     localStorage.removeItem("user")
@@ -41,14 +48,54 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
         </div>
 
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {notifications > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {notifications}
-              </span>
-            )}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {notifications > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {notifications}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Bildirimler</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {anomalies.length > 0 ? (
+                <>
+                  {anomalies.map((anomaly, index) => (
+                    <DropdownMenuItem key={index} asChild>
+                      <Link href={`/dashboard/server/${anomaly.serverId}/anomalies`} className="cursor-pointer">
+                        <div className="flex flex-col w-full">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-red-600" />
+                            <span className="font-medium">{anomaly.serverName}</span>
+                            <Badge variant="outline" className="ml-auto bg-red-50 text-red-700 border-red-200">
+                              Anomali
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">{anomaly.serverIp}</div>
+                          <div className="text-xs text-red-600 mt-1 flex items-center">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            {anomaly.type === "login" ? "Şüpheli giriş denemeleri" : "Anormal sistem aktivitesi"}
+                          </div>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard?tab=anomalies" className="cursor-pointer text-center text-sm text-blue-600">
+                      Tüm Anomalileri Görüntüle
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <div className="py-2 px-2 text-sm text-gray-500 text-center">Bildirim bulunmamaktadır</div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

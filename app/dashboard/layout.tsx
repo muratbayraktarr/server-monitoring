@@ -1,18 +1,23 @@
 "use client"
 
-import type React from "react"
-
+import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
-import { AlertBar } from "@/components/alert-bar"
+import { AnomalyProvider } from "@/hooks/use-anomalies"
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [user, setUser] = useState<any>(null)
+interface DashboardLayoutProps {
+  children: ReactNode
+}
+
+interface User {
+  name: string
+  email: string
+  phoneNumber: string
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
@@ -45,10 +50,13 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader user={user} />
-      <AlertBar />
-      <main className="container mx-auto py-6 px-4">{children}</main>
-    </div>
+    <AnomalyProvider>
+      <div className="flex min-h-screen flex-col">
+        {user && <DashboardHeader user={user} />}
+        <div className="flex-1 flex">
+          <main className="flex-1 p-6">{children}</main>
+        </div>
+      </div>
+    </AnomalyProvider>
   )
 }

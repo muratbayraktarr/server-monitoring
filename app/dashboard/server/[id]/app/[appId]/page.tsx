@@ -193,6 +193,7 @@ export default function AppDetailPage() {
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("info")
+  const [isDataFetched, setIsDataFetched] = useState(false) // Add flag to prevent infinite fetching
 
   // Define standard applications
   const standardApps = {
@@ -205,6 +206,9 @@ export default function AppDetailPage() {
   }
 
   useEffect(() => {
+    // Skip if data is already fetched or if we're still loading
+    if (isDataFetched) return
+
     const fetchAppDetails = async () => {
       setIsLoading(true)
       try {
@@ -218,7 +222,7 @@ export default function AppDetailPage() {
 
         const serversResult = await serversResponse.json()
 
-        if (serversResult.status === "success") {
+        if (serversResult.status === "success" && serversResult.data) {
           // Find the server by ID (index)
           const serverEntries = Object.entries(serversResult.data)
           if (serverEntries.length >= Number.parseInt(serverId) && Number.parseInt(serverId) > 0) {
@@ -229,81 +233,124 @@ export default function AppDetailPage() {
             // If this is the System app (id=3), fetch additional data
             if (appId === "3") {
               // Fetch open ports
-              const portsResponse = await fetch("https://murat.inseres.com/sunucu/sunucuOpenPorts", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ip }),
-              })
+              try {
+                const portsResponse = await fetch("https://murat.inseres.com/sunucu/sunucuOpenPorts", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ ip }),
+                })
 
-              const portsResult = await portsResponse.json()
-              if (portsResult.status === "success" || portsResult.data) {
-                setOpenPorts(portsResult.data || [])
+                const portsResult = await portsResponse.json()
+                if (portsResult.status === "success" || portsResult.data) {
+                  setOpenPorts(portsResult.data || [])
+                }
+              } catch (error) {
+                console.error("Error fetching open ports:", error)
               }
 
               // Fetch running processes
-              const processesResponse = await fetch("https://murat.inseres.com/sunucu/sunucuRunningProcesses", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ip }),
-              })
+              try {
+                const processesResponse = await fetch("https://murat.inseres.com/sunucu/sunucuRunningProcesses", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ ip }),
+                })
 
-              const processesResult = await processesResponse.json()
-              if (processesResult.status === "success" || processesResult.data) {
-                setRunningProcesses(processesResult.data || [])
+                const processesResult = await processesResponse.json()
+                if (processesResult.status === "success" || processesResult.data) {
+                  setRunningProcesses(processesResult.data || [])
+                }
+              } catch (error) {
+                console.error("Error fetching running processes:", error)
               }
 
               // Fetch last logins
-              const loginsResponse = await fetch("https://murat.inseres.com/sunucu/sunucuLastLogins", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ip }),
-              })
+              try {
+                const loginsResponse = await fetch("https://murat.inseres.com/sunucu/sunucuLastLogins", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ ip }),
+                })
 
-              const loginsResult = await loginsResponse.json()
-              if (loginsResult.status === "success" || loginsResult.data) {
-                setLastLogins(loginsResult.data || [])
+                const loginsResult = await loginsResponse.json()
+                if (loginsResult.status === "success" || loginsResult.data) {
+                  setLastLogins(loginsResult.data || [])
+                }
+              } catch (error) {
+                console.error("Error fetching last logins:", error)
               }
 
               // Fetch IPTables rules
-              const iptablesResponse = await fetch("https://murat.inseres.com/sunucu/sunucuIPTablesRules", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ip }),
-              })
+              try {
+                const iptablesResponse = await fetch("https://murat.inseres.com/sunucu/sunucuIPTablesRules", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ ip }),
+                })
 
-              const iptablesResult = await iptablesResponse.json()
-              if (iptablesResult.status === "success" || iptablesResult.data) {
-                setIptablesRules(iptablesResult.data || [])
+                const iptablesResult = await iptablesResponse.json()
+                if (iptablesResult.status === "success" || iptablesResult.data) {
+                  setIptablesRules(iptablesResult.data || [])
+                }
+              } catch (error) {
+                console.error("Error fetching IPTables rules:", error)
               }
             }
 
             // If this is the MySQL app (id=6), fetch MySQL info
             if (appId === "6") {
-              const mysqlResponse = await fetch("https://murat.inseres.com/sunucu/getMySQLInfo", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ip }),
-              })
+              try {
+                const mysqlResponse = await fetch("https://murat.inseres.com/sunucu/getMySQLInfo", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ ip }),
+                })
 
-              const mysqlResult = await mysqlResponse.json()
-              if (mysqlResult.status === "success" && mysqlResult.data) {
-                setMysqlInfo(mysqlResult.data)
+                const mysqlResult = await mysqlResponse.json()
+                if (mysqlResult.status === "success" && mysqlResult.data) {
+                  setMysqlInfo(mysqlResult.data)
+                }
+              } catch (error) {
+                console.error("Error fetching MySQL info:", error)
               }
             }
 
             // If this is the Elasticsearch app (id=5), fetch Elasticsearch info
             if (appId === "5") {
-              const elasticsearchResponse = await fetch("https://murat.inseres.com/sunucu/getElasticsearchShardInfo", {
+              try {
+                const elasticsearchResponse = await fetch(
+                  "https://murat.inseres.com/sunucu/getElasticsearchShardInfo",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ ip }),
+                  },
+                )
+
+                const elasticsearchResult = await elasticsearchResponse.json()
+                if (elasticsearchResult.status === "success" && elasticsearchResult.data) {
+                  setElasticsearchInfo(elasticsearchResult.data)
+                }
+              } catch (error) {
+                console.error("Error fetching Elasticsearch info:", error)
+              }
+            }
+
+            // Fetch system metrics for all apps
+            try {
+              const metricsResponse = await fetch("https://murat.inseres.com/sunucu/anasayfaSayisalDegerler", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -311,24 +358,12 @@ export default function AppDetailPage() {
                 body: JSON.stringify({ ip }),
               })
 
-              const elasticsearchResult = await elasticsearchResponse.json()
-              if (elasticsearchResult.status === "success" && elasticsearchResult.data) {
-                setElasticsearchInfo(elasticsearchResult.data)
+              const metricsResult = await metricsResponse.json()
+              if (metricsResult.status === "success" && metricsResult.data && metricsResult.data.length > 0) {
+                setSystemMetrics(metricsResult.data[0])
               }
-            }
-
-            // Fetch system metrics for all apps
-            const metricsResponse = await fetch("https://murat.inseres.com/sunucu/anasayfaSayisalDegerler", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ ip }),
-            })
-
-            const metricsResult = await metricsResponse.json()
-            if (metricsResult.status === "success" && metricsResult.data && metricsResult.data.length > 0) {
-              setSystemMetrics(metricsResult.data[0])
+            } catch (error) {
+              console.error("Error fetching system metrics:", error)
             }
 
             // Create mock app data based on the standard app
@@ -449,11 +484,17 @@ export default function AppDetailPage() {
         console.error("Error fetching application details:", error)
       } finally {
         setIsLoading(false)
+        setIsDataFetched(true) // Mark data as fetched to prevent infinite loop
       }
     }
 
     fetchAppDetails()
-  }, [serverId, appId, standardApps])
+  }, [serverId, appId, standardApps, isDataFetched]) // Add isDataFetched to dependencies
+
+  // Handle refresh button click
+  const handleRefresh = () => {
+    setIsDataFetched(false) // Reset the flag to allow fetching again
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -556,7 +597,7 @@ export default function AppDetailPage() {
       </div>
 
       <div className="flex flex-wrap gap-4">
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2" onClick={handleRefresh}>
           <RefreshCw className="h-4 w-4" />
           Yenile
         </Button>
@@ -627,7 +668,7 @@ export default function AppDetailPage() {
                   <span>{mysqlInfo.MySQLDatabases.length}</span>
                 </div>
               )}
-              {app.id === "5" && elasticsearchInfo && (
+              {app.id === "5" && elasticsearchInfo && elasticsearchInfo.ElasticsearchClusterHealth && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Küme Durumu:</span>
                   <Badge
@@ -688,7 +729,7 @@ export default function AppDetailPage() {
                   <span>{mysqlInfo.MySQLUsers.length}</span>
                 </div>
               )}
-              {app.id === "5" && elasticsearchInfo && (
+              {app.id === "5" && elasticsearchInfo && elasticsearchInfo.ElasticsearchIndexStats && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">İndeks Sayısı:</span>
                   <span>{elasticsearchInfo.ElasticsearchIndexStats.length}</span>
@@ -871,7 +912,7 @@ export default function AppDetailPage() {
                 <CardDescription>Sunucudaki MySQL veritabanları</CardDescription>
               </CardHeader>
               <CardContent>
-                {mysqlInfo && mysqlInfo.MySQLDatabases.length > 0 ? (
+                {mysqlInfo && mysqlInfo.MySQLDatabases && mysqlInfo.MySQLDatabases.length > 0 ? (
                   <div className="grid gap-2 md:grid-cols-3">
                     {mysqlInfo.MySQLDatabases.map((database, index) => (
                       <div
@@ -897,7 +938,7 @@ export default function AppDetailPage() {
                 <CardDescription>Veritabanı kullanıcıları ve erişim izinleri</CardDescription>
               </CardHeader>
               <CardContent>
-                {mysqlInfo && mysqlInfo.MySQLUsers.length > 0 ? (
+                {mysqlInfo && mysqlInfo.MySQLUsers && mysqlInfo.MySQLUsers.length > 0 ? (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -933,7 +974,7 @@ export default function AppDetailPage() {
                 <CardDescription>Son MySQL hata ve uyarı logları</CardDescription>
               </CardHeader>
               <CardContent>
-                {mysqlInfo && mysqlInfo.MySQLErrorLog.length > 0 ? (
+                {mysqlInfo && mysqlInfo.MySQLErrorLog && mysqlInfo.MySQLErrorLog.length > 0 ? (
                   <div className="space-y-4">
                     {mysqlInfo.MySQLErrorLog.map((log, index) => (
                       <div key={index} className="flex flex-col space-y-1 border-b pb-2 last:border-0">

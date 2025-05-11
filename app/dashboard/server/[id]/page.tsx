@@ -94,72 +94,78 @@ export default function ServerDetailPage() {
 
         const serversResult = await serversResponse.json()
 
-        // Next, fetch the hardware details
-        const hardwareResponse = await fetch("https://murat.inseres.com/sunucu/sunucuDonanimDetay", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
+        // Find the server by ID (index)
+        const serverEntries = Object.entries(serversResult.data || {})
+        if (serverEntries.length >= Number.parseInt(serverId) && Number.parseInt(serverId) > 0) {
+          const index = Number.parseInt(serverId) - 1
+          const [ip, name] = serverEntries[index]
 
-        const hardwareResult = await hardwareResponse.json()
+          // Next, fetch the hardware details with the server IP
+          const hardwareResponse = await fetch("https://murat.inseres.com/sunucu/sunucuDonanimDetay", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ip }),
+          })
 
-        if (serversResult.status === "success" && hardwareResult.status === "success") {
-          // Store hardware details
-          setHardwareDetails(hardwareResult.data)
+          const hardwareResult = await hardwareResponse.json()
 
-          // Find the server by ID (index)
-          const serverEntries = Object.entries(serversResult.data)
-          if (serverEntries.length >= Number.parseInt(serverId) && Number.parseInt(serverId) > 0) {
-            const index = Number.parseInt(serverId) - 1
-            const [ip, name] = serverEntries[index]
-
-            // Generate random status
-            const statuses = ["online", "warning", "offline"]
-            const randomStatusIndex = Math.floor(Math.random() * 10)
-            const status = randomStatusIndex < 7 ? "online" : randomStatusIndex < 9 ? "warning" : "offline"
-
-            // Generate random server type
-            const types = ["web", "database", "application", "storage"]
-            const type = types[Math.floor(Math.random() * types.length)]
-
-            // Create the server object with real IP, name, and hardware details
-            const mockServer: ServerData = {
-              id: serverId,
-              name: name as string,
-              type,
-              status,
-              uptime: status === "offline" ? "0%" : "99.8%",
-              ip,
-              location: ["İstanbul", "Ankara", "İzmir"][Math.floor(Math.random() * 3)],
-              hasAlerts: status === "warning",
-              specs: {
-                cpu: hardwareResult.data.islemci,
-                ram: hardwareResult.data.bellek,
-                storage: hardwareResult.data.depolama,
-                os: "Ubuntu 22.04 LTS",
-              },
-              metrics: {
-                cpuUsage: Math.floor(Math.random() * 60) + 20,
-                ramUsage: Math.floor(Math.random() * 60) + 20,
-                diskUsage: Math.floor(Math.random() * 40) + 30,
-                networkIn: Math.floor(Math.random() * 100) + 50,
-                networkOut: Math.floor(Math.random() * 80) + 20,
-              },
-            }
-
-            setServer(mockServer)
-
-            // Set standard applications with random status for some
-            const appsWithStatus = standardApps.map((app) => ({
-              ...app,
-              status: Math.random() > 0.8 ? "error" : Math.random() > 0.9 ? "stopped" : "running",
-            }))
-
-            setApplications(appsWithStatus)
-          } else {
-            console.error("Server not found")
+          // Set default hardware details if data is null
+          const defaultHardwareDetails = {
+            islemci: "Bilgi alınamadı",
+            bellek: "Bilgi alınamadı",
+            depolama: "Bilgi alınamadı",
           }
+
+          // Store hardware details (use default if data is null)
+          setHardwareDetails(hardwareResult.data || defaultHardwareDetails)
+
+          // Generate random status
+          const statuses = ["online", "warning", "offline"]
+          const randomStatusIndex = Math.floor(Math.random() * 10)
+          const status = randomStatusIndex < 7 ? "online" : randomStatusIndex < 9 ? "warning" : "offline"
+
+          // Generate random server type
+          const types = ["web", "database", "application", "storage"]
+          const type = types[Math.floor(Math.random() * types.length)]
+
+          // Create the server object with real IP, name, and hardware details
+          const mockServer: ServerData = {
+            id: serverId,
+            name: name as string,
+            type,
+            status,
+            uptime: status === "offline" ? "0%" : "99.8%",
+            ip,
+            location: ["İstanbul", "Ankara", "İzmir"][Math.floor(Math.random() * 3)],
+            hasAlerts: status === "warning",
+            specs: {
+              cpu: hardwareResult.data?.islemci || "Bilgi alınamadı",
+              ram: hardwareResult.data?.bellek || "Bilgi alınamadı",
+              storage: hardwareResult.data?.depolama || "Bilgi alınamadı",
+              os: "Ubuntu 22.04 LTS",
+            },
+            metrics: {
+              cpuUsage: Math.floor(Math.random() * 60) + 20,
+              ramUsage: Math.floor(Math.random() * 60) + 20,
+              diskUsage: Math.floor(Math.random() * 40) + 30,
+              networkIn: Math.floor(Math.random() * 100) + 50,
+              networkOut: Math.floor(Math.random() * 80) + 20,
+            },
+          }
+
+          setServer(mockServer)
+
+          // Set standard applications with random status for some
+          const appsWithStatus = standardApps.map((app) => ({
+            ...app,
+            status: Math.random() > 0.8 ? "error" : Math.random() > 0.9 ? "stopped" : "running",
+          }))
+
+          setApplications(appsWithStatus)
+        } else {
+          console.error("Server not found")
         }
       } catch (error) {
         console.error("Error fetching server details:", error)

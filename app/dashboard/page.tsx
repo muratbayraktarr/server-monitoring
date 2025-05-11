@@ -7,8 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AlertBar } from "@/components/alert-bar"
-import { AnomalyAlert } from "@/components/anomaly-alert"
 import { Server, HardDrive, Activity, Clock, CheckCircle, AlertTriangle, Shield } from "lucide-react"
+
+// Add the useAnomalies import
+import { useAnomalies } from "@/hooks/use-anomalies"
 
 interface ServerData {
   id: string
@@ -26,6 +28,9 @@ export default function DashboardPage() {
   const [servers, setServers] = useState<ServerData[]>([])
   const [loading, setLoading] = useState(true)
   const [anomalyServers, setAnomalyServers] = useState<string[]>([])
+
+  // In the DashboardPage component, replace the context line with:
+  const { setAnomalies } = useAnomalies()
 
   useEffect(() => {
     const fetchServers = async () => {
@@ -56,6 +61,23 @@ export default function DashboardPage() {
                 const anomalyResult = await anomalyResponse.json()
                 if (anomalyResult.status === "success" && anomalyResult.data && anomalyResult.data.length > 0) {
                   setAnomalyServers((prev) => [...prev, (index + 1).toString()])
+
+                  // Add this anomaly to the context for the header
+                  const anomalyData = anomalyResult.data[0]
+                  const hasLoginFailures = anomalyData.data.systemInfo.RecentSysLogs.some(
+                    (log) => log.Message.includes("Failed password") || log.Message.includes("authentication failure"),
+                  )
+
+                  setAnomalies((prev) => [
+                    ...prev,
+                    {
+                      serverId: (index + 1).toString(),
+                      serverName: name as string,
+                      serverIp: ip,
+                      count: 1,
+                      type: hasLoginFailures ? "login" : "system",
+                    },
+                  ])
                 }
               } catch (error) {
                 console.error("Error checking anomalies:", error)
@@ -136,18 +158,6 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight">Sunucu İzleme Paneli</h1>
         <Button>Yenile</Button>
       </div>
-
-      {anomalyServers.length > 0 && (
-        <div className="space-y-4">
-          {anomalyServers.map((serverId) => (
-            <AnomalyAlert
-              key={serverId}
-              serverId={serverId}
-              serverIp={servers.find((s) => s.id === serverId)?.ip || ""}
-            />
-          ))}
-        </div>
-      )}
 
       <AlertBar />
 
